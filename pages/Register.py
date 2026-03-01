@@ -361,6 +361,6 @@ with col2:
 st.markdown("<br>", unsafe_allow_html=True)
 st.markdown("""
 <div style="text-align: center; opacity: 0.5; font-size: 0.85rem;">
-    <p>© 2024 CartoonifyAI | Transforming memories into art</p>
+    <p>© 2026 CartoonifyAI | Transforming memories into art</p>
 </div>
 """, unsafe_allow_html=True)

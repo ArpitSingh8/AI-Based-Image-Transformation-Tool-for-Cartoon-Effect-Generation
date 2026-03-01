@@ -11,11 +11,25 @@ A modern web application that transforms your photos into stunning cartoon artwo
 - 🚪 **Session Management** - Secure logout with session clearing
 - 👤 **Account Details** - View and manage profile information
 
-### Core Functionality
-- 🎨 **AI-Powered Cartoon Transformation** - Convert photos to cartoons instantly
-- ⚙️ **Customizable Settings** - Adjust edge strength and color smoothing
-- 📥 **High-Quality Downloads** - Save your artwork in PNG format
-- 🖼️ **Real-time Preview** - See original and cartoon side-by-side
+### Advanced Image Processing (Week 3-4)
+- 🎨 **Multiple Cartoon Styles** - 5 different artistic styles to choose from:
+  - **Classic Cartoon** - Bold edges with smooth colors
+  - **Pencil Sketch** - Black and white detailed sketch
+  - **Colored Pencil** - Sketch with original colors
+  - **Watercolor** - Soft, painted look
+  - **Oil Painting** - Thick brush strokes effect
+- ⚙️ **Customizable Parameters** - Fine-tune each style with advanced controls
+- 🔄 **Side-by-Side Comparison** - View original and transformed images together
+- 📥 **Instant Download** - Download transformed images before any payment
+- 🚀 **Optimized Processing** - Works efficiently on all image types and sizes
+- 🎯 **High-Quality Output** - Professional-grade transformations
+
+### Technical Implementation
+- 🔍 **Edge Detection** - Adaptive thresholding for precise outlines
+- 🎨 **Bilateral Filtering** - Edge-preserving color smoothing
+- 🌈 **Color Quantization** - K-means clustering for cartoon colors
+- 📐 **Image Preprocessing** - Automatic optimization for different sizes
+- 💾 **Memory Management** - Efficient handling of large images
 
 ### Design
 - 🎯 **Modern UI/UX** - Clean, gradient-based glassmorphism design
@@ -84,10 +98,11 @@ streamlit run home.py
 ## 🛠️ Technologies
 
 - **Streamlit** - Web framework
-- **OpenCV** - Image processing
-- **Pillow** - Image handling
-- **bcrypt** - Password hashing
-- **SQLite** - Database
+- **OpenCV** - Advanced image processing with multiple algorithms
+- **Pillow** - Image handling and manipulation
+- **bcrypt** - Secure password hashing
+- **SQLite** - Lightweight database
+- **NumPy** - Numerical operations for image processing
 
 ## 📝 License
 

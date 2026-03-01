@@ -7,6 +7,7 @@ import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from backend.image_processor import ImageProcessor
 
 # Page Configuration
 st.set_page_config(
@@ -61,6 +62,48 @@ st.markdown("""
         color: rgba(255,255,255,0.95) !important;
         font-size: 1.1rem;
         margin-top: 0.5rem;
+    }
+    
+    /* Style Cards */
+    .style-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        padding: 1.5rem;
+        border-radius: 16px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        height: 100%;
+    }
+    
+    .style-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(102, 126, 234, 0.6);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+    
+    .style-card.selected {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.1);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    
+    .style-icon {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .style-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin: 0.5rem 0;
+    }
+    
+    .style-desc {
+        font-size: 0.9rem;
+        opacity: 0.8;
+        line-height: 1.4;
     }
     
     /* Glass Card */
@@ -141,29 +184,25 @@ st.markdown("""
         border-radius: 12px;
         font-weight: 600;
     }
+    
+    /* Radio Buttons */
+    .stRadio > div {
+        background: rgba(255, 255, 255, 0.03);
+        padding: 1rem;
+        border-radius: 12px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Cartoonify Function
-def cartoonify_image(image, edge_strength=9, color_smoothing=9):
-    img = np.array(image)
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    gray_blur = cv2.medianBlur(gray, 5)
-    edges = cv2.adaptiveThreshold(
-        gray_blur, 255,
-        cv2.ADAPTIVE_THRESH_MEAN_C,
-        cv2.THRESH_BINARY,
-        edge_strength, 9
-    )
-    color = cv2.bilateralFilter(img, color_smoothing, 250, 250)
-    cartoon = cv2.bitwise_and(color, color, mask=edges)
-    return cartoon
+# Initialize session state for style selection
+if 'selected_style' not in st.session_state:
+    st.session_state.selected_style = 'classic'
 
 # Header
 st.markdown("""
 <div class="page-header">
     <h1 class="page-title">🎨 Image Transformation Studio</h1>
-    <p class="page-subtitle">Upload your photo and watch the AI magic happen</p>
+    <p class="page-subtitle">Choose your style and watch the AI magic happen</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -172,6 +211,30 @@ col1, col2, col3 = st.columns([1, 4, 1])
 with col1:
     if st.button("← Back to Dashboard", width="stretch"):
         st.switch_page("pages/Dashboard.py")
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Style Selection
+st.markdown('<p style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem;">🎭 Choose Your Art Style</p>', unsafe_allow_html=True)
+
+styles_info = ImageProcessor.get_style_info()
+
+# Create style selection cards
+style_cols = st.columns(5)
+for idx, (style_key, style_data) in enumerate(styles_info.items()):
+    with style_cols[idx]:
+        selected_class = "selected" if st.session_state.selected_style == style_key else ""
+        st.markdown(f"""
+        <div class="style-card {selected_class}">
+            <div class="style-icon">{style_data['icon']}</div>
+            <div class="style-name">{style_data['name']}</div>
+            <div class="style-desc">{style_data['description']}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button(f"Select", key=f"btn_{style_key}", width="stretch"):
+            st.session_state.selected_style = style_key
+            st.rerun()
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -188,80 +251,178 @@ uploaded_file = st.file_uploader(
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
     
-    # Advanced Settings
+    # Advanced Settings based on selected style
     st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander("🎛️ Advanced Controls", expanded=False):
-        st.markdown("Fine-tune the transformation to match your creative vision")
-        col1, col2 = st.columns(2)
-        with col1:
-            edge_strength = st.slider(
-                "Edge Definition", 
-                5, 15, 9, 2, 
-                help="Higher values create stronger, more defined outlines"
-            )
+    current_style_info = styles_info[st.session_state.selected_style]
+    
+    with st.expander(f"🎛️ {current_style_info['name']} Settings", expanded=False):
+        st.markdown("Fine-tune the transformation parameters")
+        
+        params = {}
+        
+        if st.session_state.selected_style == "classic":
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                params['edge_strength'] = st.slider(
+                    "Edge Strength", 
+                    5, 15, 9, 2,
+                    help="Higher values = stronger outlines"
+                )
+            with col2:
+                params['color_smoothing'] = st.slider(
+                    "Color Smoothness", 
+                    5, 15, 9, 2,
+                    help="Higher values = smoother colors"
+                )
+            with col3:
+                params['color_levels'] = st.slider(
+                    "Color Levels", 
+                    5, 15, 9, 2,
+                    help="Number of color levels"
+                )
+        
+        elif st.session_state.selected_style == "sketch":
+            col1, col2 = st.columns(2)
+            with col1:
+                params['blur_value'] = st.slider(
+                    "Blur Intensity", 
+                    11, 31, 21, 2,
+                    help="Higher values = softer sketch"
+                )
+            with col2:
+                params['sigma_s'] = st.slider(
+                    "Spatial Sigma", 
+                    30, 100, 60, 10,
+                    help="Controls detail level"
+                )
+        
+        elif st.session_state.selected_style == "pencil":
+            col1, col2 = st.columns(2)
+            with col1:
+                params['sigma_s'] = st.slider(
+                    "Spatial Sigma", 
+                    30, 100, 60, 10,
+                    help="Controls detail level"
+                )
+            with col2:
+                params['shade_factor'] = st.slider(
+                    "Shade Factor", 
+                    0.01, 0.1, 0.02, 0.01,
+                    help="Controls shading intensity"
+                )
+        
+        elif st.session_state.selected_style == "watercolor":
+            col1, col2 = st.columns(2)
+            with col1:
+                params['blur_value'] = st.slider(
+                    "Blur Intensity", 
+                    9, 25, 15, 2,
+                    help="Higher values = softer look"
+                )
+            with col2:
+                params['edge_strength'] = st.slider(
+                    "Edge Strength", 
+                    5, 15, 7, 2,
+                    help="Controls edge visibility"
+                )
+        
+        elif st.session_state.selected_style == "oil":
+            col1, col2 = st.columns(2)
+            with col1:
+                params['size'] = st.slider(
+                    "Brush Size", 
+                    3, 15, 7, 2,
+                    help="Size of brush strokes"
+                )
+            with col2:
+                params['dynRatio'] = st.slider(
+                    "Dynamic Ratio", 
+                    1, 3, 1, 1,
+                    help="Controls color variation"
+                )
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Process Image Button
+    col1, col2, col3 = st.columns([2, 2, 2])
+    with col2:
+        process_button = st.button("✨ Transform Image", width="stretch", type="primary")
+    
+    if process_button or 'processed_image' in st.session_state:
+        # Image Display
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Create tabs for different views
+        tab1, tab2, tab3 = st.tabs(["🔄 Side-by-Side", "📷 Original", "🎨 Transformed"])
+        
+        with st.spinner(f"🎨 Creating your {current_style_info['name']} masterpiece..."):
+            try:
+                # Process the image
+                processed_image = ImageProcessor.process_image(
+                    image,
+                    style=st.session_state.selected_style,
+                    **params
+                )
+                st.session_state.processed_image = processed_image
+                
+                # Create comparison
+                comparison = ImageProcessor.create_comparison(image, processed_image)
+                st.session_state.comparison = comparison
+                
+            except Exception as e:
+                st.error(f"❌ Error processing image: {str(e)}")
+                st.stop()
+        
+        with tab1:
+            st.markdown('<div class="image-label">🔄 Before & After Comparison</div>', unsafe_allow_html=True)
+            st.image(st.session_state.comparison, width="stretch", caption="Left: Original | Right: Transformed")
+        
+        with tab2:
+            st.markdown('<div class="image-label">📷 Original Image</div>', unsafe_allow_html=True)
+            st.image(image, width="stretch")
+            
+            # Image Info
+            st.markdown(f"""
+            <div style="background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: 12px; margin-top: 1rem;">
+                <p style="margin: 0; opacity: 0.7; font-size: 0.9rem;">
+                    <strong>Filename:</strong> {uploaded_file.name}<br>
+                    <strong>Size:</strong> {image.size[0]} x {image.size[1]} pixels<br>
+                    <strong>Format:</strong> {image.format}
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with tab3:
+            st.markdown(f'<div class="image-label">✨ {current_style_info["name"]} Result</div>', unsafe_allow_html=True)
+            st.image(st.session_state.processed_image, width="stretch")
+            st.success(f"✅ {current_style_info['name']} transformation complete!")
+        
+        # Download Section
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("---")
+        st.markdown('<p style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem; text-align: center;">💾 Download Your Artwork</p>', unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            color_smoothing = st.slider(
-                "Color Smoothness", 
-                5, 15, 9, 2, 
-                help="Higher values create smoother, more uniform colors"
+            # Convert to PIL Image for download
+            result = Image.fromarray(st.session_state.processed_image)
+            buf = BytesIO()
+            result.save(buf, format="PNG")
+            byte_im = buf.getvalue()
+            
+            st.download_button(
+                label=f"📥 Download {current_style_info['name']}",
+                data=byte_im,
+                file_name=f"{current_style_info['name'].lower().replace(' ', '_')}_{uploaded_file.name.split('.')[0]}.png",
+                mime="image/png",
+                width="stretch"
             )
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Image Display
-    col1, col2 = st.columns(2, gap="large")
-    
-    with col1:
-        st.markdown('<div class="image-label">📷 Original Image</div>', unsafe_allow_html=True)
-        st.image(image, width="stretch")
-        
-        # Image Info
-        st.markdown(f"""
-        <div style="background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: 12px; margin-top: 1rem;">
-            <p style="margin: 0; opacity: 0.7; font-size: 0.9rem;">
-                <strong>Filename:</strong> {uploaded_file.name}<br>
-                <strong>Size:</strong> {image.size[0]} x {image.size[1]} pixels<br>
-                <strong>Format:</strong> {image.format}
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown('<div class="image-label">✨ Cartoonified Result</div>', unsafe_allow_html=True)
-        
-        with st.spinner("🎨 Transforming your image... This may take a moment"):
-            cartoon_image = cartoonify_image(image, edge_strength, color_smoothing)
-        
-        st.image(cartoon_image, width="stretch")
-        
-        # Success Message
-        st.success("✅ Transformation complete!")
-    
-    # Download Section
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("---")
-    st.markdown('<p style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem; text-align: center;">💾 Download Your Artwork</p>', unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        result = Image.fromarray(cartoon_image)
-        buf = BytesIO()
-        result.save(buf, format="PNG")
-        byte_im = buf.getvalue()
-        
-        st.download_button(
-            label="📥 Download Cartoon Image",
-            data=byte_im,
-            file_name=f"cartoonify_{uploaded_file.name.split('.')[0]}.png",
-            mime="image/png",
-            width="stretch"
-        )
-        
-        st.markdown("""
-        <div style="text-align: center; margin-top: 1rem; opacity: 0.7; font-size: 0.9rem;">
-            <p>Your image will be downloaded as a high-quality PNG file</p>
-        </div>
-        """, unsafe_allow_html=True)
+            
+            st.markdown("""
+            <div style="text-align: center; margin-top: 1rem; opacity: 0.7; font-size: 0.9rem;">
+                <p>Your image will be downloaded as a high-quality PNG file</p>
+            </div>
+            """, unsafe_allow_html=True)
 
 else:
     # Empty State
@@ -271,7 +432,7 @@ else:
         <h3 style="margin: 1rem 0; font-size: 1.8rem;">No Image Uploaded Yet</h3>
         <p style="opacity: 0.7; font-size: 1.1rem; line-height: 1.8;">
             Upload an image above to start the transformation process.<br>
-            Supported formats: JPG, JPEG, PNG
+            Choose from 5 different artistic styles!
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -283,9 +444,9 @@ else:
     tip_col1, tip_col2, tip_col3 = st.columns(3, gap="medium")
     
     tips = [
-        ("📸", "High Quality", "Use clear, well-lit photos for the best cartoon effects"),
-        ("🎨", "Experiment", "Try different settings to find your perfect style"),
-        ("🖼️", "Portraits", "Portrait photos work especially well with our AI")
+        ("📸", "High Quality", "Use clear, well-lit photos for the best results"),
+        ("🎨", "Try All Styles", "Each style works differently - experiment to find your favorite"),
+        ("🖼️", "Portraits Work Best", "Portrait and landscape photos produce stunning results")
     ]
     
     for col, (icon, title, desc) in zip([tip_col1, tip_col2, tip_col3], tips):
@@ -304,6 +465,6 @@ st.markdown("<br>", unsafe_allow_html=True)
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; opacity: 0.6; padding: 1rem;">
-    <p style="font-size: 0.9rem;">© 2024 CartoonifyAI | Transforming memories into art</p>
+    <p style="font-size: 0.9rem;">© 2026 CartoonifyAI | Transforming memories into art</p>
 </div>
 """, unsafe_allow_html=True)

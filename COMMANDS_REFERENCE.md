@@ -1,11 +1,4 @@
-# 📝 Git Commands Reference for CartoonifyAI
-
-## Quick Reference for ArpitSingh8
-
----
-
 ## 🚀 Initial Push to GitHub
-
 ### Step 1: Create Repository on GitHub
 Go to: https://github.com/new
 - Name: `CartoonifyAI`
@@ -259,7 +252,7 @@ git log --author="ArpitSingh8"
 ### Set User Info
 ```bash
 git config --global user.name "Arpit Singh"
-git config --global user.email "your.email@example.com"
+git config --global user.email "arpit260602@gmail.com"
 ```
 
 ### View Configuration
@@ -268,7 +261,7 @@ git config --global user.email "your.email@example.com"
 git config --list
 
 # View specific config
-git config user.name
+git config Arpit Singh
 ```
 
 ### Set Default Editor

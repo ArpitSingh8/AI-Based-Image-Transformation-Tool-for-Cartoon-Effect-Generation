@@ -313,6 +313,6 @@ st.markdown("<br>", unsafe_allow_html=True)
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; opacity: 0.6; padding: 1rem;">
-    <p style="font-size: 0.9rem;">© 2024 CartoonifyAI | Transforming memories into art</p>
+    <p style="font-size: 0.9rem;">© 2026 CartoonifyAI | Transforming memories into art</p>
 </div>
 """, unsafe_allow_html=True)

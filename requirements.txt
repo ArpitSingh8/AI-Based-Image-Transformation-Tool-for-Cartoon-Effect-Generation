@@ -1,4 +1,5 @@
 streamlit
 bcrypt
-opencv-python
+opencv-contrib-python
 pillow
+numpy
